@@ -12,6 +12,22 @@
 #include <string>
 #include <vector>
 
+#include <swmgr.h>
+#include <installmgr.h>
+
+class SwordBackendSettings
+{
+  public:
+    // Functions
+    SwordBackendSettings();
+    void Read(std::string file_name);
+    void Save(std::string file_name);
+    // Settings Values
+    std::string LibraryDir;
+    std::string InstallDir;
+    std::string DefaultSource;
+};
+
 struct SwordModuleInfo
 {
   std::string Name;
@@ -25,15 +41,16 @@ class SwordBackend
   public:
     // Constructor
     SwordBackend();
+    SwordBackend(SwordBackendSettings settings);
     // Install Manager
     bool HasInstallerConfig();
     void InitInstallerConfig();
-    std::vector<SwordModuleInfo>
-      GetRemoteSourceModules(std::string src_name = "");
+    void SelectRemoteSource(std::string src_name = "");
+    std::vector<SwordModuleInfo> GetRemoteSourceModules();
+    void InstallRemoteModule(std::string mod_name);
     // Library Manager
-
+    std::string GetText(std::string key, std::string mod_name);
     // Get/Set
-    std::string GetBaseDir(){ return base_dir; }
     std::string GetInstallDir(){ return install_manager_dir; }
     std::string GetLibraryDir(){ return library_dir; }
     std::string GetDefaultSource(){ return default_source; }
@@ -41,11 +58,16 @@ class SwordBackend
     std::string GetSwordVersion();
   private:
     // Directories
-    std::string base_dir;
     std::string install_manager_dir;
     std::string library_dir;
     // Variables
     std::string default_source;
+    std::string selected_source;
+    // Local Module Library
+    sword::SWMgr library_mgr;
+    // Module Installer
+    sword::InstallMgr install_mgr;
+    std::vector<SwordModuleInfo> remote_module_info_list;
 };
 
 #endif

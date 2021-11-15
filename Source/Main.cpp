@@ -26,10 +26,12 @@ class MainFrame: public wxFrame
 {
   public:
     MainFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
+    wxButton * GetTextButton;
     wxTextCtrl * ScriptureTextCtrl;
     wxTextCtrl * CommentaryTextCtrl;
   private:
     void OnExit(wxCommandEvent& event);
+    void LoadText(wxCommandEvent& event);
     void AddModule(wxCommandEvent& event);
     wxDECLARE_EVENT_TABLE();
 };
@@ -38,26 +40,34 @@ class InstallerFrame: public wxFrame
 {
 public:
   InstallerFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
+  wxButton * InstallButton;
   wxListCtrl * ModuleListCtrl;
+  wxTextCtrl * ModDescriptionTextCtrl;
   //wxTextCtrl * CommentaryTextCtrl;
 private:
   void OnExit(wxCommandEvent& event);
-  //void AddModule(wxCommandEvent& event);
+  void InstallModule(wxCommandEvent& event);
+  void DisplayModuleInfo(wxListEvent& event);
   wxDECLARE_EVENT_TABLE();
 };
 
 enum
 {
-  ID_Add = wxID_HIGHEST + 1
+  ID_Get = wxID_HIGHEST + 1,
+  ID_Add = wxID_HIGHEST + 2,
+  ID_Install = wxID_HIGHEST + 3
 };
 
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
   EVT_MENU(ID_Add, MainFrame::AddModule)
   EVT_MENU(wxID_EXIT, MainFrame::OnExit)
+  EVT_BUTTON(ID_Get, MainFrame::LoadText)
 wxEND_EVENT_TABLE()
 
 wxBEGIN_EVENT_TABLE(InstallerFrame, wxFrame)
   EVT_MENU(wxID_EXIT, InstallerFrame::OnExit)
+  EVT_BUTTON(ID_Install, InstallerFrame::InstallModule)
+  EVT_LIST_ITEM_SELECTED(wxID_ANY, InstallerFrame::DisplayModuleInfo)
 wxEND_EVENT_TABLE()
 
 wxIMPLEMENT_APP(MyApp);
@@ -76,9 +86,7 @@ bool MyApp::OnInit()
 MainFrame::MainFrame(const wxString& title, const wxPoint& pos, const wxSize& size)
         : wxFrame(NULL, wxID_ANY, title, pos, size)
 {
-  /////////////////////
-  // Menu Bar at Top //
-  /////////////////////
+  // Menu Bar at Top
   wxMenu * menuFile = new wxMenu;
   menuFile->Append(ID_Add, "&Add Module\tCtrl-A", "Add SWORD Module");
   menuFile->AppendSeparator();
@@ -91,21 +99,19 @@ MainFrame::MainFrame(const wxString& title, const wxPoint& pos, const wxSize& si
   // Main Panel
   wxPanel * panel = new wxPanel(this, wxID_ANY);
 
-  //////////////////////////////////////////
-  // Text Control for Scripture Reference //
-  //////////////////////////////////////////
+  // Button Control to Load Text
+  GetTextButton = new wxButton(panel, ID_Get, _T("Get Text"),
+    wxPoint(50, 30), wxSize(100,30), 0);
+
+  // Text Control for Scripture Reference
   ScriptureTextCtrl = new wxTextCtrl(panel, wxID_ANY, "Scripture Text",
     wxPoint(50, 100), wxSize(400, 200), wxTE_READONLY | wxTE_MULTILINE);
 
-  /////////////////////////////////
-  // Text Control for Commentary //
-  /////////////////////////////////
+  // Text Control for Commentary
   CommentaryTextCtrl = new wxTextCtrl(panel, wxID_ANY, "Commentary Text",
     wxPoint(500, 100), wxSize(400, 400), wxTE_READONLY | wxTE_MULTILINE);
 
-  ////////////////////////////
-  // Status Bar (at bottom) //
-  ////////////////////////////
+  // Status Bar at Bottom
   CreateStatusBar();
   std::string initial_status("Welcome to Machaira!");
   initial_status += " Using "+SwordApp.GetSwordVersion();
@@ -115,6 +121,14 @@ MainFrame::MainFrame(const wxString& title, const wxPoint& pos, const wxSize& si
 void MainFrame::OnExit(wxCommandEvent& event)
 {
   Close(true);
+}
+
+void MainFrame::LoadText(wxCommandEvent& event)
+{
+  ScriptureTextCtrl->Clear();
+  *ScriptureTextCtrl << wxString(SwordApp.GetText("gen 1:1", "KJV"));
+  CommentaryTextCtrl->Clear();
+  *CommentaryTextCtrl << wxString(SwordApp.GetText("gen 1:1", "Wesley"));
 }
 
 void MainFrame::AddModule(wxCommandEvent& event)
@@ -129,9 +143,7 @@ void MainFrame::AddModule(wxCommandEvent& event)
 InstallerFrame::InstallerFrame(const wxString& title, const wxPoint& pos,
   const wxSize& size) : wxFrame(NULL, wxID_ANY, title, pos, size)
 {
-  /////////////////////
-  // Menu Bar at Top //
-  /////////////////////
+  // Menu Bar at Top
   wxMenu * menuFile = new wxMenu;
   menuFile->Append(ID_Add, "&Add Source\tCtrl-A", "Add Module Source");
   menuFile->AppendSeparator();
@@ -144,19 +156,23 @@ InstallerFrame::InstallerFrame(const wxString& title, const wxPoint& pos,
   // Main Panel
   wxPanel * panel = new wxPanel(this, wxID_ANY);
 
-  //////////////////////////////
-  // List Control for Modules //
-  //////////////////////////////
-  ModuleListCtrl = new wxListCtrl(panel, wxID_ANY, wxPoint(50, 100),
-    wxSize(370, 500), wxLC_REPORT | wxLC_HRULES);
-  ModuleListCtrl->InsertColumn(0, "Module Name", wxLIST_FORMAT_LEFT, 120);
-  ModuleListCtrl->InsertColumn(1, "Type", wxLIST_FORMAT_LEFT, 120);
-  ModuleListCtrl->InsertColumn(1, "Version", wxLIST_FORMAT_LEFT, 120);
+  // Button Control to Install Modules
+  InstallButton = new wxButton(panel, ID_Install, _T("Install Module"),
+    wxPoint(50, 30), wxSize(100,30), 0);
 
-  if(!SwordApp.HasInstallerConfig())
-  {
-    SwordApp.InitInstallerConfig();
-  }
+  // List Control for Modules
+  ModuleListCtrl = new wxListCtrl(panel, wxID_ANY, wxPoint(50, 100),
+    wxSize(430, 400), wxLC_REPORT | wxLC_HRULES | wxLC_SINGLE_SEL);
+  ModuleListCtrl->InsertColumn(0, "Module Name", wxLIST_FORMAT_LEFT, 120);
+  ModuleListCtrl->InsertColumn(1, "Type", wxLIST_FORMAT_LEFT, 200);
+  ModuleListCtrl->InsertColumn(2, "Version", wxLIST_FORMAT_LEFT, 100);
+
+  // Text Control for Description
+  ModDescriptionTextCtrl = new wxTextCtrl(panel, wxID_ANY, "Module Description",
+    wxPoint(500, 100), wxSize(400, 250), wxTE_READONLY | wxTE_MULTILINE);
+
+  if(!SwordApp.HasInstallerConfig()) SwordApp.InitInstallerConfig();
+  SwordApp.SelectRemoteSource();
   std::vector<SwordModuleInfo> mod_list = SwordApp.GetRemoteSourceModules();
   for(int n = 0; n < mod_list.size(); n++)
   {
@@ -165,9 +181,7 @@ InstallerFrame::InstallerFrame(const wxString& title, const wxPoint& pos,
     ModuleListCtrl->SetItem(n, 2, mod_list[n].Version);
   }
 
-  ////////////////////////////
-  // Status Bar (at bottom) //
-  ////////////////////////////
+  // Status Bar at Bottom
   CreateStatusBar();
   std::string initial_status("Module Installer");
   SetStatusText(initial_status);
@@ -176,4 +190,23 @@ InstallerFrame::InstallerFrame(const wxString& title, const wxPoint& pos,
 void InstallerFrame::OnExit(wxCommandEvent& event)
 {
   Close(true);
+}
+
+void InstallerFrame::InstallModule(wxCommandEvent& event)
+{
+  long int itemIndex = -1;
+  itemIndex = ModuleListCtrl->GetNextItem(itemIndex, wxLIST_NEXT_ALL,
+    wxLIST_STATE_SELECTED);
+  std::vector<SwordModuleInfo> mod_list = SwordApp.GetRemoteSourceModules();
+  SwordApp.InstallRemoteModule(mod_list[itemIndex].Name);
+}
+
+void InstallerFrame::DisplayModuleInfo(wxListEvent& event)
+{
+  long int itemIndex = -1;
+  itemIndex = ModuleListCtrl->GetNextItem(itemIndex, wxLIST_NEXT_ALL,
+    wxLIST_STATE_SELECTED);
+  std::vector<SwordModuleInfo> mod_list = SwordApp.GetRemoteSourceModules();
+  ModDescriptionTextCtrl->Clear();
+  *ModDescriptionTextCtrl << wxString(mod_list[itemIndex].Description.c_str());
 }
