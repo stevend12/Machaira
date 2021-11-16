@@ -27,6 +27,7 @@ class MainFrame: public wxFrame
   public:
     MainFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
     wxButton * GetTextButton;
+    wxTextCtrl * VerseTextCtrl;
     wxTextCtrl * ScriptureTextCtrl;
     wxTextCtrl * CommentaryTextCtrl;
   private:
@@ -100,8 +101,12 @@ MainFrame::MainFrame(const wxString& title, const wxPoint& pos, const wxSize& si
   wxPanel * panel = new wxPanel(this, wxID_ANY);
 
   // Button Control to Load Text
-  GetTextButton = new wxButton(panel, ID_Get, _T("Get Text"),
-    wxPoint(50, 30), wxSize(100,30), 0);
+  GetTextButton = new wxButton(panel, ID_Get, _T("Get Verse"),
+    wxPoint(50, 30), wxSize(120,30), 0);
+
+  // Text Control for Verse Entry
+  VerseTextCtrl = new wxTextCtrl(panel, wxID_ANY, "Enter Verse(s) Here",
+    wxPoint(200, 30), wxSize(200,30));
 
   // Text Control for Scripture Reference
   ScriptureTextCtrl = new wxTextCtrl(panel, wxID_ANY, "Scripture Text",
@@ -125,10 +130,12 @@ void MainFrame::OnExit(wxCommandEvent& event)
 
 void MainFrame::LoadText(wxCommandEvent& event)
 {
+  std::string verse_txt = std::string(VerseTextCtrl->GetLineText(0));
+  std::cout << verse_txt << '\n';
   ScriptureTextCtrl->Clear();
-  *ScriptureTextCtrl << wxString(SwordApp.GetText("gen 1:1", "KJV"));
+  *ScriptureTextCtrl << wxString(SwordApp.GetText(verse_txt, "KJV"));
   CommentaryTextCtrl->Clear();
-  *CommentaryTextCtrl << wxString(SwordApp.GetText("gen 1:1", "Wesley"));
+  *CommentaryTextCtrl << wxString(SwordApp.GetText(verse_txt, "Wesley"));
 }
 
 void MainFrame::AddModule(wxCommandEvent& event)
@@ -161,15 +168,15 @@ InstallerFrame::InstallerFrame(const wxString& title, const wxPoint& pos,
     wxPoint(50, 30), wxSize(100,30), 0);
 
   // List Control for Modules
-  ModuleListCtrl = new wxListCtrl(panel, wxID_ANY, wxPoint(50, 100),
-    wxSize(430, 400), wxLC_REPORT | wxLC_HRULES | wxLC_SINGLE_SEL);
+  ModuleListCtrl = new wxListCtrl(panel, wxID_ANY, wxPoint(40, 100),
+    wxSize(420, 400), wxLC_REPORT | wxLC_HRULES | wxLC_SINGLE_SEL);
   ModuleListCtrl->InsertColumn(0, "Module Name", wxLIST_FORMAT_LEFT, 120);
   ModuleListCtrl->InsertColumn(1, "Type", wxLIST_FORMAT_LEFT, 200);
-  ModuleListCtrl->InsertColumn(2, "Version", wxLIST_FORMAT_LEFT, 100);
+  ModuleListCtrl->InsertColumn(2, "Version", wxLIST_FORMAT_LEFT, 90);
 
   // Text Control for Description
   ModDescriptionTextCtrl = new wxTextCtrl(panel, wxID_ANY, "Module Description",
-    wxPoint(500, 100), wxSize(400, 250), wxTE_READONLY | wxTE_MULTILINE);
+    wxPoint(480, 100), wxSize(300, 200), wxTE_READONLY | wxTE_MULTILINE);
 
   if(!SwordApp.HasInstallerConfig()) SwordApp.InitInstallerConfig();
   SwordApp.SelectRemoteSource();
