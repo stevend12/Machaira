@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.0.0)
 project(Machaira)
 
 # wxWidgets - UI
-find_package(wxWidgets REQUIRED COMPONENTS net core base adv)
+find_package(wxWidgets REQUIRED COMPONENTS html net core base adv)
 include(${wxWidgets_USE_FILE})
 
 # Set compiler flags

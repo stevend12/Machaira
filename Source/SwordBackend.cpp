@@ -17,7 +17,7 @@
 #include <markupfiltmgr.h>
 
 SwordBackend::SwordBackend() :
-  library_mgr("./.sword", true, new sword::MarkupFilterMgr(sword::FMT_XHTML)),
+  library_mgr("./.sword", true, new sword::MarkupFilterMgr(sword::FMT_HTML)),
   install_mgr("./.sword/InstallMgr")
 {
   library_dir = "./.sword";
@@ -32,7 +32,7 @@ SwordBackend::SwordBackend() :
 
 SwordBackend::SwordBackend(SwordBackendSettings settings) :
   library_mgr(settings.LibraryDir.c_str(), true,
-    new sword::MarkupFilterMgr(sword::FMT_HTML)),
+    new sword::MarkupFilterMgr(sword::FMT_XHTML)),
   install_mgr(settings.InstallDir.c_str())
 {
   library_dir = settings.LibraryDir;

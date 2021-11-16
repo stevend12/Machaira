@@ -10,6 +10,7 @@
   #include <wx/wx.h>
 #endif
 #include <wx/listctrl.h>
+#include <wx/html/htmlwin.h>
 
 #include "SwordBackend.hpp"
 
@@ -28,8 +29,8 @@ class MainFrame: public wxFrame
     MainFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
     wxButton * GetTextButton;
     wxTextCtrl * VerseTextCtrl;
-    wxTextCtrl * ScriptureTextCtrl;
-    wxTextCtrl * CommentaryTextCtrl;
+    wxHtmlWindow * ScriptureHtmlWindow;
+    wxHtmlWindow * CommentaryHtmlWindow;
   private:
     void OnExit(wxCommandEvent& event);
     void LoadText(wxCommandEvent& event);
@@ -44,7 +45,6 @@ public:
   wxButton * InstallButton;
   wxListCtrl * ModuleListCtrl;
   wxTextCtrl * ModDescriptionTextCtrl;
-  //wxTextCtrl * CommentaryTextCtrl;
 private:
   void OnExit(wxCommandEvent& event);
   void InstallModule(wxCommandEvent& event);
@@ -109,12 +109,12 @@ MainFrame::MainFrame(const wxString& title, const wxPoint& pos, const wxSize& si
     wxPoint(200, 30), wxSize(200,30));
 
   // Text Control for Scripture Reference
-  ScriptureTextCtrl = new wxTextCtrl(panel, wxID_ANY, "Scripture Text",
-    wxPoint(50, 100), wxSize(400, 200), wxTE_READONLY | wxTE_MULTILINE);
+  ScriptureHtmlWindow = new wxHtmlWindow(panel, wxID_ANY, wxPoint(50, 100),
+    wxSize(400, 200));
 
   // Text Control for Commentary
-  CommentaryTextCtrl = new wxTextCtrl(panel, wxID_ANY, "Commentary Text",
-    wxPoint(500, 100), wxSize(400, 400), wxTE_READONLY | wxTE_MULTILINE);
+  CommentaryHtmlWindow = new wxHtmlWindow(panel, wxID_ANY, wxPoint(500, 100),
+    wxSize(400, 400));
 
   // Status Bar at Bottom
   CreateStatusBar();
@@ -131,11 +131,8 @@ void MainFrame::OnExit(wxCommandEvent& event)
 void MainFrame::LoadText(wxCommandEvent& event)
 {
   std::string verse_txt = std::string(VerseTextCtrl->GetLineText(0));
-  std::cout << verse_txt << '\n';
-  ScriptureTextCtrl->Clear();
-  *ScriptureTextCtrl << wxString(SwordApp.GetText(verse_txt, "KJV"));
-  CommentaryTextCtrl->Clear();
-  *CommentaryTextCtrl << wxString(SwordApp.GetText(verse_txt, "Wesley"));
+  ScriptureHtmlWindow->SetPage(SwordApp.GetText(verse_txt, "KJV"));
+  CommentaryHtmlWindow->SetPage(SwordApp.GetText(verse_txt, "Wesley"));
 }
 
 void MainFrame::AddModule(wxCommandEvent& event)
