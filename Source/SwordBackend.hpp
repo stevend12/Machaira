@@ -61,6 +61,8 @@ class SwordBackend
     std::string GetDefaultSource(){ return default_source; }
     // Utilities
     std::string GetSwordVersion();
+    std::string GetVerseRef(std::string mod_name);
+    std::string UpdateVerse(std::string mod_name, int n);
   private:
     // Directories
     std::string install_manager_dir;

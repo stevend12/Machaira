@@ -15,37 +15,30 @@
 #include <swversion.h>
 #include <filemgr.h>
 #include <markupfiltmgr.h>
+#include <swoptfilter.h>
 
 SwordBackend::SwordBackend() :
-  library_mgr("./.sword", true, new sword::MarkupFilterMgr(sword::FMT_HTML)),
+  library_mgr("./.sword", true, new sword::MarkupFilterMgr(sword::FMT_XHTML)),
   install_mgr("./.sword/InstallMgr")
 {
   library_dir = "./.sword";
   install_manager_dir = "./.sword/InstallMgr";
   default_source = "CrossWire";
   install_mgr.setUserDisclaimerConfirmed(true);
-  if(!library_mgr.config)
-  {
-    std::cout << "SWORD configuration not found.\n";
-  }
-
+  if(!library_mgr.config) std::cout << "SWORD configuration not found.\n";
   InitializeAppModules();
 }
 
 SwordBackend::SwordBackend(SwordBackendSettings settings) :
   library_mgr(settings.LibraryDir.c_str(), true,
-    new sword::MarkupFilterMgr(sword::FMT_HTML)),
+    new sword::MarkupFilterMgr(sword::FMT_XHTML)),
   install_mgr(settings.InstallDir.c_str())
 {
   library_dir = settings.LibraryDir;
   install_manager_dir = settings.InstallDir;
   default_source = settings.DefaultSource;
   install_mgr.setUserDisclaimerConfirmed(true);
-  if(!library_mgr.config)
-  {
-    std::cout << "SWORD configuration not found.\n";
-  }
-
+  if(!library_mgr.config) std::cout << "SWORD configuration not found.\n";
   InitializeAppModules();
 }
 
@@ -158,6 +151,7 @@ void SwordBackend::InitializeAppModules()
     modIterator != library_mgr.Modules.end(); modIterator++)
   {
     sword::SWModule * module = (*modIterator).second;
+    // Assign module to group
     if(std::string(module->Type()) == "Biblical Texts")
     {
       biblical_texts.push_back(module->Name());
@@ -167,6 +161,18 @@ void SwordBackend::InitializeAppModules()
       commentaries.push_back(module->Name());
     }
     else std::cout << "Module " << module->Name() << " not included in app.\n";
+    // Set default options for modules
+    for(sword::OptionFilterList::const_iterator it =
+      module->getOptionFilters().begin();
+      it != module->getOptionFilters().end(); ++it)
+    {
+      if((std::string((*it)->getOptionName()) == "Strong's Numbers") &&
+        (std::string(module->Type()) == "Biblical Texts"))
+      {
+        (*it)->setOptionValue("On");
+      }
+      else (*it)->setOptionValue("Off");
+    }
   }
 }
 
@@ -185,4 +191,18 @@ std::string SwordBackend::GetSwordVersion()
   std::stringstream ss;
   ss << "SWORD Version: " << retval;
   return ss.str();
+}
+
+std::string SwordBackend::GetVerseRef(std::string mod_name)
+{
+  sword::SWKey * my_key = (library_mgr.getModule(mod_name.c_str()))->getKey();
+  return std::string(my_key->getText());
+}
+
+std::string SwordBackend::UpdateVerse(std::string mod_name, int n)
+{
+  sword::SWKey * my_key = (library_mgr.getModule(mod_name.c_str()))->getKey();
+  if(n >= 0) my_key->increment(n);
+  else my_key->decrement(-1*n);
+  return std::string(my_key->getText());
 }

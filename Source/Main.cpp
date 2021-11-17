@@ -10,6 +10,7 @@
   #include <wx/wx.h>
 #endif
 #include <wx/listctrl.h>
+#include <wx/combobox.h>
 #include <wx/html/htmlwin.h>
 
 #include "SwordBackend.hpp"
@@ -29,12 +30,22 @@ class MainFrame: public wxFrame
     MainFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
     wxButton * GetTextButton;
     wxTextCtrl * VerseTextCtrl;
+    wxStaticText * CurrentVerseText;
+    wxButton * PreviousVerseButton;
+    wxButton * NextVerseButton;
     wxHtmlWindow * ScriptureHtmlWindow;
     wxHtmlWindow * CommentaryHtmlWindow;
+    wxComboBox * CommentaryComboBox;
   private:
+    // Event Functions
     void OnExit(wxCommandEvent& event);
     void LoadText(wxCommandEvent& event);
     void AddModule(wxCommandEvent& event);
+    void ChooseCommentary(wxCommandEvent& event);
+    void GoToPreviousVerse(wxCommandEvent& event);
+    void GoToNextVerse(wxCommandEvent& event);
+    // Utilities
+    void UpdateWindows(std::string verse);
     wxDECLARE_EVENT_TABLE();
 };
 
@@ -56,13 +67,18 @@ enum
 {
   ID_Get = wxID_HIGHEST + 1,
   ID_Add = wxID_HIGHEST + 2,
-  ID_Install = wxID_HIGHEST + 3
+  ID_PrevVerse = wxID_HIGHEST + 3,
+  ID_NextVerse = wxID_HIGHEST + 4,
+  ID_Install = wxID_HIGHEST + 5
 };
 
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
   EVT_MENU(ID_Add, MainFrame::AddModule)
   EVT_MENU(wxID_EXIT, MainFrame::OnExit)
   EVT_BUTTON(ID_Get, MainFrame::LoadText)
+  EVT_COMBOBOX(wxID_ANY, MainFrame::ChooseCommentary)
+  EVT_BUTTON(ID_PrevVerse, MainFrame::GoToPreviousVerse)
+  EVT_BUTTON(ID_NextVerse, MainFrame::GoToNextVerse)
 wxEND_EVENT_TABLE()
 
 wxBEGIN_EVENT_TABLE(InstallerFrame, wxFrame)
@@ -102,18 +118,45 @@ MainFrame::MainFrame(const wxString& title, const wxPoint& pos, const wxSize& si
 
   // Button Control to Load Text
   GetTextButton = new wxButton(panel, ID_Get, _T("Get Verse"),
-    wxPoint(50, 30), wxSize(120,30), 0);
+    wxPoint(30, 30), wxSize(100,30), 0);
 
   // Text Control for Verse Entry
   VerseTextCtrl = new wxTextCtrl(panel, wxID_ANY, "Enter Verse(s) Here",
-    wxPoint(200, 30), wxSize(200,30));
+    wxPoint(150, 30), wxSize(200,30));
+
+  // Static Text to show Current Verse
+  CurrentVerseText = new wxStaticText(panel, wxID_ANY, "No Verse Selected",
+    wxPoint(380, 30), wxSize(240,30), wxALIGN_CENTRE_HORIZONTAL);
+
+  // Button Control to go to previous verse
+  PreviousVerseButton = new wxButton(panel, ID_PrevVerse, _T("<-"),
+    wxPoint(650, 30), wxSize(60,30), 0);
+
+  // Button Control to go to next verse
+  NextVerseButton = new wxButton(panel, ID_NextVerse, _T("->"),
+    wxPoint(730, 30), wxSize(60,30), 0);
 
   // Text Control for Scripture Reference
-  ScriptureHtmlWindow = new wxHtmlWindow(panel, wxID_ANY, wxPoint(50, 100),
+  ScriptureHtmlWindow = new wxHtmlWindow(panel, wxID_ANY, wxPoint(50, 120),
     wxSize(400, 200));
 
+  // Choose Commentary to Display
+  std::vector<std::string> commentaries = SwordApp.GetCommentaries();
+  wxArrayString choices;
+  wxString value("");
+  if(commentaries.size() > 0)
+  {
+    value = commentaries[0].c_str();
+    for(int n = 0; n < commentaries.size(); n++)
+    {
+      choices.Add(commentaries[n].c_str());
+    }
+  }
+  CommentaryComboBox = new wxComboBox(panel, wxID_ANY, value,
+    wxPoint(500, 70), wxSize(200, 30), choices, wxCB_READONLY);
+
   // Text Control for Commentary
-  CommentaryHtmlWindow = new wxHtmlWindow(panel, wxID_ANY, wxPoint(500, 100),
+  CommentaryHtmlWindow = new wxHtmlWindow(panel, wxID_ANY, wxPoint(500, 120),
     wxSize(400, 400));
 
   // Status Bar at Bottom
@@ -130,11 +173,7 @@ void MainFrame::OnExit(wxCommandEvent& event)
 
 void MainFrame::LoadText(wxCommandEvent& event)
 {
-  std::string verse_txt = std::string(VerseTextCtrl->GetLineText(0));
-  std::string bible = SwordApp.GetBiblicalText(0);
-  std::string comment = SwordApp.GetCommentary(1);
-  ScriptureHtmlWindow->SetPage(SwordApp.GetText(verse_txt, bible.c_str()));
-  CommentaryHtmlWindow->SetPage(SwordApp.GetText(verse_txt, comment.c_str()));
+  UpdateWindows(std::string(VerseTextCtrl->GetLineText(0)));
 }
 
 void MainFrame::AddModule(wxCommandEvent& event)
@@ -143,6 +182,34 @@ void MainFrame::AddModule(wxCommandEvent& event)
     wxPoint(200, 200), wxSize(800, 600));
   installer_frame->Show(true);
 	wxGetApp().SetTopWindow(installer_frame);
+}
+
+void MainFrame::ChooseCommentary(wxCommandEvent& event)
+{
+  UpdateWindows(SwordApp.GetVerseRef(SwordApp.GetBiblicalText(0)));
+}
+
+void MainFrame::GoToPreviousVerse(wxCommandEvent& event)
+{
+  SwordApp.UpdateVerse(SwordApp.GetBiblicalText(0), -1);
+  UpdateWindows(SwordApp.GetVerseRef(SwordApp.GetBiblicalText(0)));
+}
+
+void MainFrame::GoToNextVerse(wxCommandEvent& event)
+{
+  SwordApp.UpdateVerse(SwordApp.GetBiblicalText(0), 1);
+  UpdateWindows(SwordApp.GetVerseRef(SwordApp.GetBiblicalText(0)));
+}
+
+void MainFrame::UpdateWindows(std::string verse)
+{
+  ScriptureHtmlWindow->SetPage(
+    SwordApp.GetText(verse, SwordApp.GetBiblicalText(0))
+  );
+  CommentaryHtmlWindow->SetPage(
+    SwordApp.GetText(verse, std::string(CommentaryComboBox->GetValue()))
+  );
+  CurrentVerseText->SetLabel(SwordApp.GetVerseRef(SwordApp.GetBiblicalText(0)));
 }
 
 InstallerFrame::InstallerFrame(const wxString& title, const wxPoint& pos,
@@ -199,19 +266,19 @@ void InstallerFrame::OnExit(wxCommandEvent& event)
 
 void InstallerFrame::InstallModule(wxCommandEvent& event)
 {
-  long int itemIndex = -1;
-  itemIndex = ModuleListCtrl->GetNextItem(itemIndex, wxLIST_NEXT_ALL,
+  long int item_index = -1;
+  item_index = ModuleListCtrl->GetNextItem(item_index, wxLIST_NEXT_ALL,
     wxLIST_STATE_SELECTED);
   std::vector<SwordModuleInfo> mod_list = SwordApp.GetRemoteSourceModules();
-  SwordApp.InstallRemoteModule(mod_list[itemIndex].Name);
+  SwordApp.InstallRemoteModule(mod_list[item_index].Name);
 }
 
 void InstallerFrame::DisplayModuleInfo(wxListEvent& event)
 {
-  long int itemIndex = -1;
-  itemIndex = ModuleListCtrl->GetNextItem(itemIndex, wxLIST_NEXT_ALL,
+  long int item_index = -1;
+  item_index = ModuleListCtrl->GetNextItem(item_index, wxLIST_NEXT_ALL,
     wxLIST_STATE_SELECTED);
   std::vector<SwordModuleInfo> mod_list = SwordApp.GetRemoteSourceModules();
   ModDescriptionTextCtrl->Clear();
-  *ModDescriptionTextCtrl << wxString(mod_list[itemIndex].Description.c_str());
+  *ModDescriptionTextCtrl << wxString(mod_list[item_index].Description.c_str());
 }
