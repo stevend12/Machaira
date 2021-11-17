@@ -131,13 +131,14 @@ void MainFrame::OnExit(wxCommandEvent& event)
 void MainFrame::LoadText(wxCommandEvent& event)
 {
   std::string verse_txt = std::string(VerseTextCtrl->GetLineText(0));
-  ScriptureHtmlWindow->SetPage(SwordApp.GetText(verse_txt, "KJV"));
-  CommentaryHtmlWindow->SetPage(SwordApp.GetText(verse_txt, "Wesley"));
+  std::string bible = SwordApp.GetBiblicalText(0);
+  std::string comment = SwordApp.GetCommentary(1);
+  ScriptureHtmlWindow->SetPage(SwordApp.GetText(verse_txt, bible.c_str()));
+  CommentaryHtmlWindow->SetPage(SwordApp.GetText(verse_txt, comment.c_str()));
 }
 
 void MainFrame::AddModule(wxCommandEvent& event)
 {
-  //wxMessageBox(wxT("Not ready yet!"), wxT("Whoops!"), wxICON_INFORMATION);
   InstallerFrame * installer_frame = new InstallerFrame("Module Installer",
     wxPoint(200, 200), wxSize(800, 600));
   installer_frame->Show(true);

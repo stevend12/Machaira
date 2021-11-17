@@ -28,6 +28,8 @@ SwordBackend::SwordBackend() :
   {
     std::cout << "SWORD configuration not found.\n";
   }
+
+  InitializeAppModules();
 }
 
 SwordBackend::SwordBackend(SwordBackendSettings settings) :
@@ -38,10 +40,13 @@ SwordBackend::SwordBackend(SwordBackendSettings settings) :
   library_dir = settings.LibraryDir;
   install_manager_dir = settings.InstallDir;
   default_source = settings.DefaultSource;
+  install_mgr.setUserDisclaimerConfirmed(true);
   if(!library_mgr.config)
   {
     std::cout << "SWORD configuration not found.\n";
   }
+
+  InitializeAppModules();
 }
 
 bool SwordBackend::HasInstallerConfig()
@@ -136,7 +141,33 @@ void SwordBackend::InstallRemoteModule(std::string mod_name)
     std::cout << "\nError installing module: [" << module->getName() <<
       "] (write permissions?)\n";
   }
-  else std::cout << "\nInstalled module: [" << module->getName() << "]\n";
+  else
+  {
+    std::cout << "\nInstalled module: [" << module->getName() << "]\n";
+    library_mgr.augmentModules(library_dir.c_str());
+  }
+}
+
+void SwordBackend::InitializeAppModules()
+{
+  biblical_texts.clear();
+  commentaries.clear();
+
+  sword::ModMap::iterator modIterator;
+  for(modIterator = library_mgr.Modules.begin();
+    modIterator != library_mgr.Modules.end(); modIterator++)
+  {
+    sword::SWModule * module = (*modIterator).second;
+    if(std::string(module->Type()) == "Biblical Texts")
+    {
+      biblical_texts.push_back(module->Name());
+    }
+    else if(std::string(module->Type()) == "Commentaries")
+    {
+      commentaries.push_back(module->Name());
+    }
+    else std::cout << "Module " << module->Name() << " not included in app.\n";
+  }
 }
 
 std::string SwordBackend::GetText(std::string key, std::string mod_name)
