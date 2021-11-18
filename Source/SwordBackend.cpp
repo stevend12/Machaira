@@ -181,7 +181,10 @@ std::string SwordBackend::GetText(std::string key, std::string mod_name)
   sword::SWKey myKey(key.c_str());
   sword::SWModule * module = library_mgr.getModule(mod_name.c_str());
   module->setKey(myKey);
-  return std::string(module->renderText());
+  std::string verse(module->renderText());
+  const char * p = u8"\u00b6";
+  if(verse.find(p) != std::string::npos) verse.erase(verse.find(p), 2);
+  return verse;
 }
 
 std::string SwordBackend::GetSwordVersion()
