@@ -35,12 +35,14 @@ class MainFrame: public wxFrame
     wxButton * NextVerseButton;
     wxHtmlWindow * ScriptureHtmlWindow;
     wxHtmlWindow * CommentaryHtmlWindow;
+    wxComboBox * ScriptureComboBox;
     wxComboBox * CommentaryComboBox;
   private:
     // Event Functions
     void OnExit(wxCommandEvent& event);
     void LoadText(wxCommandEvent& event);
     void AddModule(wxCommandEvent& event);
+    void ChooseTranslation(wxCommandEvent& event);
     void ChooseCommentary(wxCommandEvent& event);
     void GoToPreviousVerse(wxCommandEvent& event);
     void GoToNextVerse(wxCommandEvent& event);
@@ -76,6 +78,7 @@ wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
   EVT_MENU(ID_Add, MainFrame::AddModule)
   EVT_MENU(wxID_EXIT, MainFrame::OnExit)
   EVT_BUTTON(ID_Get, MainFrame::LoadText)
+  EVT_COMBOBOX(wxID_ANY, MainFrame::ChooseTranslation)
   EVT_COMBOBOX(wxID_ANY, MainFrame::ChooseCommentary)
   EVT_BUTTON(ID_PrevVerse, MainFrame::GoToPreviousVerse)
   EVT_BUTTON(ID_NextVerse, MainFrame::GoToNextVerse)
@@ -125,7 +128,7 @@ MainFrame::MainFrame(const wxString& title, const wxPoint& pos, const wxSize& si
     wxPoint(150, 30), wxSize(200,30));
 
   // Static Text to show Current Verse
-  CurrentVerseText = new wxStaticText(panel, wxID_ANY, "No Verse Selected",
+  CurrentVerseText = new wxStaticText(panel, wxID_ANY, "Genesis 1:1",
     wxPoint(380, 30), wxSize(240,30), wxALIGN_CENTRE_HORIZONTAL);
 
   // Button Control to go to previous verse
@@ -141,19 +144,34 @@ MainFrame::MainFrame(const wxString& title, const wxPoint& pos, const wxSize& si
     wxSize(400, 200));
 
   // Choose Commentary to Display
-  std::vector<std::string> commentaries = SwordApp.GetCommentaries();
-  wxArrayString choices;
-  wxString value("");
-  if(commentaries.size() > 0)
+  std::vector<std::string> translations = SwordApp.GetBiblicalTexts();
+  wxArrayString t_choices;
+  wxString t_value("");
+  if(translations.size() > 0)
   {
-    value = commentaries[0].c_str();
-    for(int n = 0; n < commentaries.size(); n++)
+    t_value = translations[0].c_str();
+    for(int n = 0; n < translations.size(); n++)
     {
-      choices.Add(commentaries[n].c_str());
+      t_choices.Add(translations[n].c_str());
     }
   }
-  CommentaryComboBox = new wxComboBox(panel, wxID_ANY, value,
-    wxPoint(500, 70), wxSize(200, 30), choices, wxCB_READONLY);
+  ScriptureComboBox = new wxComboBox(panel, wxID_ANY, t_value,
+    wxPoint(50, 70), wxSize(200, 30), t_choices, wxCB_READONLY);
+
+  // Choose Commentary to Display
+  std::vector<std::string> commentaries = SwordApp.GetCommentaries();
+  wxArrayString c_choices;
+  wxString c_value("");
+  if(commentaries.size() > 0)
+  {
+    c_value = commentaries[0].c_str();
+    for(int n = 0; n < commentaries.size(); n++)
+    {
+      c_choices.Add(commentaries[n].c_str());
+    }
+  }
+  CommentaryComboBox = new wxComboBox(panel, wxID_ANY, c_value,
+    wxPoint(500, 70), wxSize(200, 30), c_choices, wxCB_READONLY);
 
   // Text Control for Commentary
   CommentaryHtmlWindow = new wxHtmlWindow(panel, wxID_ANY, wxPoint(500, 120),
@@ -164,6 +182,9 @@ MainFrame::MainFrame(const wxString& title, const wxPoint& pos, const wxSize& si
   std::string initial_status("Welcome to Machaira!");
   initial_status += " Using "+SwordApp.GetSwordVersion();
   SetStatusText(initial_status);
+
+  // Initialize app by showing Genesis 1:1
+  UpdateWindows("Genesis 1:1");
 }
 
 void MainFrame::OnExit(wxCommandEvent& event)
@@ -184,32 +205,37 @@ void MainFrame::AddModule(wxCommandEvent& event)
 	wxGetApp().SetTopWindow(installer_frame);
 }
 
+void MainFrame::ChooseTranslation(wxCommandEvent& event)
+{
+  UpdateWindows(std::string(CurrentVerseText->GetLabel()));
+}
+
 void MainFrame::ChooseCommentary(wxCommandEvent& event)
 {
-  UpdateWindows(SwordApp.GetVerseRef(SwordApp.GetBiblicalText(0)));
+  UpdateWindows(SwordApp.GetVerseRef(std::string(ScriptureComboBox->GetValue())));
 }
 
 void MainFrame::GoToPreviousVerse(wxCommandEvent& event)
 {
-  SwordApp.UpdateVerse(SwordApp.GetBiblicalText(0), -1);
-  UpdateWindows(SwordApp.GetVerseRef(SwordApp.GetBiblicalText(0)));
+  SwordApp.IncrementVerse(std::string(ScriptureComboBox->GetValue()), -1);
+  UpdateWindows(SwordApp.GetVerseRef(std::string(ScriptureComboBox->GetValue())));
 }
 
 void MainFrame::GoToNextVerse(wxCommandEvent& event)
 {
-  SwordApp.UpdateVerse(SwordApp.GetBiblicalText(0), 1);
-  UpdateWindows(SwordApp.GetVerseRef(SwordApp.GetBiblicalText(0)));
+  SwordApp.IncrementVerse(std::string(ScriptureComboBox->GetValue()), 1);
+  UpdateWindows(SwordApp.GetVerseRef(std::string(ScriptureComboBox->GetValue())));
 }
 
 void MainFrame::UpdateWindows(std::string verse)
 {
   ScriptureHtmlWindow->SetPage(
-    SwordApp.GetText(verse, SwordApp.GetBiblicalText(0))
+    SwordApp.GetText(verse, std::string(ScriptureComboBox->GetValue()))
   );
   CommentaryHtmlWindow->SetPage(
     SwordApp.GetText(verse, std::string(CommentaryComboBox->GetValue()))
   );
-  CurrentVerseText->SetLabel(SwordApp.GetVerseRef(SwordApp.GetBiblicalText(0)));
+  CurrentVerseText->SetLabel(SwordApp.GetVerseRef(std::string(ScriptureComboBox->GetValue())));
 }
 
 InstallerFrame::InstallerFrame(const wxString& title, const wxPoint& pos,

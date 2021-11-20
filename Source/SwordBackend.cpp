@@ -184,7 +184,7 @@ std::string SwordBackend::GetText(std::string key, std::string mod_name)
   sword::SWModule * module = library_mgr.getModule(mod_name.c_str());
   module->setKey(myKey);
   std::string initial_txt(module->renderText());
-  // Convert all non-ASCII characters to HTML entities (hexadecimal)
+  // Convert all non-ASCII characters to HTML entities (hexadecimal format)
   std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> ucs4conv;
   std::u32string ucs4 = ucs4conv.from_bytes(initial_txt);
   for(char32_t c : ucs4)
@@ -215,7 +215,7 @@ std::string SwordBackend::GetVerseRef(std::string mod_name)
   return std::string(my_key->getText());
 }
 
-std::string SwordBackend::UpdateVerse(std::string mod_name, int n)
+std::string SwordBackend::IncrementVerse(std::string mod_name, int n)
 {
   sword::SWKey * my_key = (library_mgr.getModule(mod_name.c_str()))->getKey();
   if(n >= 0) my_key->increment(n);
