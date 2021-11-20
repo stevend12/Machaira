@@ -178,13 +178,26 @@ void SwordBackend::InitializeAppModules()
 
 std::string SwordBackend::GetText(std::string key, std::string mod_name)
 {
+  std::stringstream ss;
+  // Get text from SWORD (raw data)
   sword::SWKey myKey(key.c_str());
   sword::SWModule * module = library_mgr.getModule(mod_name.c_str());
   module->setKey(myKey);
-  std::string verse(module->renderText());
-  const char * p = u8"\u00b6";
-  if(verse.find(p) != std::string::npos) verse.erase(verse.find(p), 2);
-  return verse;
+  std::string initial_txt(module->renderText());
+  // Convert all non-ASCII characters to HTML entities (hexadecimal)
+  std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> ucs4conv;
+  std::u32string ucs4 = ucs4conv.from_bytes(initial_txt);
+  for(char32_t c : ucs4)
+  {
+    if(static_cast<uint32_t>(c) <= static_cast<uint32_t>(0x7e)) ss << char(c);
+    else
+    {
+      ss << "&#x" << std::hex << std::setw(4) << std::setfill('0')
+        << static_cast<uint32_t>(c) << '\n';
+    }
+  }
+
+  return ss.str();
 }
 
 std::string SwordBackend::GetSwordVersion()
