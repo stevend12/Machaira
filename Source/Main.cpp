@@ -28,15 +28,20 @@ class MainFrame: public wxFrame
 {
   public:
     MainFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
+    // Verse controls at top of window
     wxButton * GetTextButton;
     wxTextCtrl * VerseTextCtrl;
     wxStaticText * CurrentVerseText;
     wxButton * PreviousVerseButton;
     wxButton * NextVerseButton;
-    wxHtmlWindow * ScriptureHtmlWindow;
-    wxHtmlWindow * CommentaryHtmlWindow;
+    // Scripture display
     wxComboBox * ScriptureComboBox;
+    wxHtmlWindow * ScriptureHtmlWindow;
+    // Commentary display
     wxComboBox * CommentaryComboBox;
+    wxHtmlWindow * CommentaryHtmlWindow;
+    // Hover display (Dictionary/Lexicon/Cross-Reference)
+    wxHtmlWindow * HoverHtmlWindow;
   private:
     // Event Functions
     void OnExit(wxCommandEvent& event);
@@ -46,6 +51,7 @@ class MainFrame: public wxFrame
     void ChooseCommentary(wxCommandEvent& event);
     void GoToPreviousVerse(wxCommandEvent& event);
     void GoToNextVerse(wxCommandEvent& event);
+    void UpdateMiscDisplay(wxHtmlLinkEvent& event);
     // Utilities
     void UpdateWindows(std::string verse);
     wxDECLARE_EVENT_TABLE();
@@ -82,6 +88,7 @@ wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
   EVT_COMBOBOX(wxID_ANY, MainFrame::ChooseCommentary)
   EVT_BUTTON(ID_PrevVerse, MainFrame::GoToPreviousVerse)
   EVT_BUTTON(ID_NextVerse, MainFrame::GoToNextVerse)
+  EVT_HTML_LINK_CLICKED(wxID_ANY, MainFrame::UpdateMiscDisplay)
 wxEND_EVENT_TABLE()
 
 wxBEGIN_EVENT_TABLE(InstallerFrame, wxFrame)
@@ -128,7 +135,8 @@ MainFrame::MainFrame(const wxString& title, const wxPoint& pos, const wxSize& si
     wxPoint(150, 30), wxSize(200,30));
 
   // Static Text to show Current Verse
-  CurrentVerseText = new wxStaticText(panel, wxID_ANY, "Genesis 1:1",
+  std::string boot_verse("Genesis 1:1");
+  CurrentVerseText = new wxStaticText(panel, wxID_ANY, boot_verse,
     wxPoint(380, 30), wxSize(240,30), wxALIGN_CENTRE_HORIZONTAL);
 
   // Button Control to go to previous verse
@@ -139,11 +147,7 @@ MainFrame::MainFrame(const wxString& title, const wxPoint& pos, const wxSize& si
   NextVerseButton = new wxButton(panel, ID_NextVerse, _T("->"),
     wxPoint(730, 30), wxSize(60,30), 0);
 
-  // Text Control for Scripture Reference
-  ScriptureHtmlWindow = new wxHtmlWindow(panel, wxID_ANY, wxPoint(50, 120),
-    wxSize(400, 200));
-
-  // Choose Commentary to Display
+  // Combo Box to Choose Scripture Translation
   std::vector<std::string> translations = SwordApp.GetBiblicalTexts();
   wxArrayString t_choices;
   wxString t_value("");
@@ -158,7 +162,11 @@ MainFrame::MainFrame(const wxString& title, const wxPoint& pos, const wxSize& si
   ScriptureComboBox = new wxComboBox(panel, wxID_ANY, t_value,
     wxPoint(50, 70), wxSize(200, 30), t_choices, wxCB_READONLY);
 
-  // Choose Commentary to Display
+  // HTML Window for Scripture Display
+  ScriptureHtmlWindow = new wxHtmlWindow(panel, wxID_ANY, wxPoint(50, 120),
+    wxSize(400, 200));
+
+  // Combo Box to Choose Commentary
   std::vector<std::string> commentaries = SwordApp.GetCommentaries();
   wxArrayString c_choices;
   wxString c_value("");
@@ -173,9 +181,13 @@ MainFrame::MainFrame(const wxString& title, const wxPoint& pos, const wxSize& si
   CommentaryComboBox = new wxComboBox(panel, wxID_ANY, c_value,
     wxPoint(500, 70), wxSize(200, 30), c_choices, wxCB_READONLY);
 
-  // Text Control for Commentary
+  // HTML Window for Commentary Display
   CommentaryHtmlWindow = new wxHtmlWindow(panel, wxID_ANY, wxPoint(500, 120),
     wxSize(400, 400));
+
+  // HTML Window for Hover Display (Dictionary/Lexicon/Cross-Reference)
+  HoverHtmlWindow = new wxHtmlWindow(panel, wxID_ANY, wxPoint(50, 360),
+    wxSize(400, 200));
 
   // Status Bar at Bottom
   CreateStatusBar();
@@ -184,7 +196,7 @@ MainFrame::MainFrame(const wxString& title, const wxPoint& pos, const wxSize& si
   SetStatusText(initial_status);
 
   // Initialize app by showing Genesis 1:1
-  UpdateWindows("Genesis 1:1");
+  UpdateWindows(boot_verse);
 }
 
 void MainFrame::OnExit(wxCommandEvent& event)
@@ -236,6 +248,39 @@ void MainFrame::UpdateWindows(std::string verse)
     SwordApp.GetText(verse, std::string(CommentaryComboBox->GetValue()))
   );
   CurrentVerseText->SetLabel(SwordApp.GetVerseRef(std::string(ScriptureComboBox->GetValue())));
+}
+
+void MainFrame::UpdateMiscDisplay(wxHtmlLinkEvent& event)
+{
+  wxString ref(event.GetLinkInfo().GetHref());
+  int f = ref.Find('_');
+  int l = ref.Find('_', true);
+  wxString l_action(ref.SubString(0, f-1));
+  wxString l_type(ref.SubString(f+1, l-1));
+  wxString l_val(ref.Mid(l+1));
+
+  if(l_action == "showRef")
+  {
+    HoverHtmlWindow->SetPage(SwordApp.GetText(std::string(l_val),
+      std::string(ScriptureComboBox->GetValue()))
+    );
+  }
+  if(l_action == "showStrongs")
+  {
+    if(l_type == "Hebrew")
+    {
+      HoverHtmlWindow->SetPage(SwordApp.GetText(std::string(l_val),
+        "StrongsHebrew")
+      );
+    }
+    if(l_type == "Greek")
+    {
+      HoverHtmlWindow->SetPage(SwordApp.GetText(std::string(l_val),
+        "StrongsGreek")
+      );
+    }
+  }
+  SetStatusText(event.GetLinkInfo().GetHref());
 }
 
 InstallerFrame::InstallerFrame(const wxString& title, const wxPoint& pos,

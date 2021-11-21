@@ -183,10 +183,10 @@ std::string SwordBackend::GetText(std::string key, std::string mod_name)
   sword::SWKey myKey(key.c_str());
   sword::SWModule * module = library_mgr.getModule(mod_name.c_str());
   module->setKey(myKey);
-  std::string initial_txt(module->renderText());
+  std::string input(module->renderText());
   // Convert all non-ASCII characters to HTML entities (hexadecimal format)
   std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> ucs4conv;
-  std::u32string ucs4 = ucs4conv.from_bytes(initial_txt);
+  std::u32string ucs4 = ucs4conv.from_bytes(input);
   for(char32_t c : ucs4)
   {
     if(static_cast<uint32_t>(c) <= static_cast<uint32_t>(0x7e)) ss << char(c);
@@ -196,8 +196,45 @@ std::string SwordBackend::GetText(std::string key, std::string mod_name)
         << static_cast<uint32_t>(c) << '\n';
     }
   }
+  input = ss.str();
+  ss.clear();
+  ss.str("");
+  // Condense links
+  size_t a_begin = 0, a_end, p1, p2;
+  while(input.find("<a", a_begin) != std::string::npos)
+  {
+    a_begin = input.find("<a", a_begin);
+    a_end = input.find("</a>", a_begin); a_end += 4;
+    std::string link = input.substr(a_begin, a_end-a_begin);
 
-  return ss.str();
+    p1 = link.find("action=", 0); p1 += 7;
+    p2 = link.find('&', p1);
+    std::string l_action = link.substr(p1, p2-p1);
+
+    p1 = link.find("type=", 0); p1 += 5;
+    p2 = link.find('&', p1);
+    std::string l_type = link.substr(p1, p2-p1);
+
+    p1 = link.find("value=", 0); p1 += 6;
+    p2 = link.find('&', p1);
+    std::string l_val = link.substr(p1, p2-p1);
+
+    p1 = link.find('>', 0); p1 += 1;
+    p2 = link.find('<', p1);
+    std::string l_text = link.substr(p1, p2-p1);
+
+    ss << "<a href=\"" << l_action << '_' << l_type << '_' << l_val << "\">"
+      << l_text << "</a>";
+
+    input.erase(a_begin, a_end-a_begin);
+    input.insert(a_begin, ss.str());
+
+    a_begin += ss.str().length();
+    ss.clear();
+    ss.str("");
+  }
+
+  return input;
 }
 
 std::string SwordBackend::GetSwordVersion()
