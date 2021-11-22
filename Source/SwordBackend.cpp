@@ -160,6 +160,10 @@ void SwordBackend::InitializeAppModules()
     {
       commentaries.push_back(module->Name());
     }
+    else if(std::string(module->Type()) == "Lexicons / Dictionaries")
+    {
+      dictionaries.push_back(module->Name());
+    }
     else std::cout << "Module " << module->Name() << " not included in app.\n";
     // Set default options for modules
     for(sword::OptionFilterList::const_iterator it =
@@ -216,7 +220,7 @@ std::string SwordBackend::GetText(std::string key, std::string mod_name)
     std::string l_type = link.substr(p1, p2-p1);
 
     p1 = link.find("value=", 0); p1 += 6;
-    p2 = link.find('&', p1);
+    p2 = std::min(link.find('\"', p1), link.find('&', p1));
     std::string l_val = link.substr(p1, p2-p1);
 
     p1 = link.find('>', 0); p1 += 1;

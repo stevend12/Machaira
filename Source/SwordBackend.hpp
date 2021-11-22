@@ -74,6 +74,7 @@ class SwordBackend
     sword::SWMgr library_mgr;
     std::vector<std::string> biblical_texts;
     std::vector<std::string> commentaries;
+    std::vector<std::string> dictionaries;
     // Module Installer
     sword::InstallMgr install_mgr;
     std::vector<SwordModuleInfo> remote_module_info_list;

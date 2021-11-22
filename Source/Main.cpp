@@ -164,7 +164,7 @@ MainFrame::MainFrame(const wxString& title, const wxPoint& pos, const wxSize& si
 
   // HTML Window for Scripture Display
   ScriptureHtmlWindow = new wxHtmlWindow(panel, wxID_ANY, wxPoint(50, 120),
-    wxSize(400, 200));
+    wxSize(400, 180));
 
   // Combo Box to Choose Commentary
   std::vector<std::string> commentaries = SwordApp.GetCommentaries();
@@ -186,8 +186,8 @@ MainFrame::MainFrame(const wxString& title, const wxPoint& pos, const wxSize& si
     wxSize(400, 400));
 
   // HTML Window for Hover Display (Dictionary/Lexicon/Cross-Reference)
-  HoverHtmlWindow = new wxHtmlWindow(panel, wxID_ANY, wxPoint(50, 360),
-    wxSize(400, 200));
+  HoverHtmlWindow = new wxHtmlWindow(panel, wxID_ANY, wxPoint(50, 320),
+    wxSize(400, 180));
 
   // Status Bar at Bottom
   CreateStatusBar();
