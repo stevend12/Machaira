@@ -26,7 +26,8 @@ SwordBackend::SwordBackend() :
   default_source = "CrossWire";
   install_mgr.setUserDisclaimerConfirmed(true);
   if(!library_mgr.config) std::cout << "SWORD configuration not found.\n";
-  InitializeAppModules();
+  InitializeInstaller();
+  InitializeLibrary();
 }
 
 SwordBackend::SwordBackend(SwordBackendSettings settings) :
@@ -39,7 +40,8 @@ SwordBackend::SwordBackend(SwordBackendSettings settings) :
   default_source = settings.DefaultSource;
   install_mgr.setUserDisclaimerConfirmed(true);
   if(!library_mgr.config) std::cout << "SWORD configuration not found.\n";
-  InitializeAppModules();
+  InitializeInstaller();
+  InitializeLibrary();
 }
 
 bool SwordBackend::HasInstallerConfig()
@@ -68,6 +70,15 @@ void SwordBackend::InitInstallerConfig()
   config["Sources"]["FTPSource"] = is.getConfEnt();
 
   config.save();
+}
+
+void SwordBackend::InitializeInstaller()
+{
+  remote_sources.clear();
+  for(const auto & [key, value] : install_mgr.sources)
+  {
+    remote_sources.push_back(std::string(key));
+  }
 }
 
 void SwordBackend::SelectRemoteSource(std::string src_name)
@@ -141,7 +152,7 @@ void SwordBackend::InstallRemoteModule(std::string mod_name)
   }
 }
 
-void SwordBackend::InitializeAppModules()
+void SwordBackend::InitializeLibrary()
 {
   biblical_texts.clear();
   commentaries.clear();

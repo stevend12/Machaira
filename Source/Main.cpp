@@ -61,11 +61,14 @@ class InstallerFrame: public wxFrame
 {
 public:
   InstallerFrame(const wxString& title, const wxPoint& pos, const wxSize& size);
+  wxComboBox * SourceComboBox;
+  wxButton * LoadSourceButton;
   wxButton * InstallButton;
   wxListCtrl * ModuleListCtrl;
   wxTextCtrl * ModDescriptionTextCtrl;
 private:
   void OnExit(wxCommandEvent& event);
+  void LoadSource(wxCommandEvent& event);
   void InstallModule(wxCommandEvent& event);
   void DisplayModuleInfo(wxListEvent& event);
   wxDECLARE_EVENT_TABLE();
@@ -77,7 +80,8 @@ enum
   ID_Add = wxID_HIGHEST + 2,
   ID_PrevVerse = wxID_HIGHEST + 3,
   ID_NextVerse = wxID_HIGHEST + 4,
-  ID_Install = wxID_HIGHEST + 5
+  ID_LoadSource = wxID_HIGHEST + 5,
+  ID_Install = wxID_HIGHEST + 6
 };
 
 wxBEGIN_EVENT_TABLE(MainFrame, wxFrame)
@@ -93,6 +97,7 @@ wxEND_EVENT_TABLE()
 
 wxBEGIN_EVENT_TABLE(InstallerFrame, wxFrame)
   EVT_MENU(wxID_EXIT, InstallerFrame::OnExit)
+  EVT_BUTTON(ID_LoadSource, InstallerFrame::LoadSource)
   EVT_BUTTON(ID_Install, InstallerFrame::InstallModule)
   EVT_LIST_ITEM_SELECTED(wxID_ANY, InstallerFrame::DisplayModuleInfo)
 wxEND_EVENT_TABLE()
@@ -303,12 +308,31 @@ InstallerFrame::InstallerFrame(const wxString& title, const wxPoint& pos,
   // Main Panel
   wxPanel * panel = new wxPanel(this, wxID_ANY);
 
+  // Combo Box to Choose Scripture Translation
+  std::vector<std::string> sources = SwordApp.GetRemoteSources();
+  wxArrayString s_choices;
+  wxString s_value("");
+  if(sources.size() > 0)
+  {
+    s_value = sources[0].c_str();
+    for(int n = 0; n < sources.size(); n++)
+    {
+      s_choices.Add(sources[n].c_str());
+    }
+  }
+  SourceComboBox = new wxComboBox(panel, wxID_ANY, s_value,
+    wxPoint(50, 30), wxSize(200, 30), s_choices, wxCB_READONLY);
+
+  // Button Control to Install Modules
+  LoadSourceButton = new wxButton(panel, ID_LoadSource, _T("Load Source"),
+    wxPoint(50, 70), wxSize(100, 30), 0);
+
   // Button Control to Install Modules
   InstallButton = new wxButton(panel, ID_Install, _T("Install Module"),
-    wxPoint(50, 30), wxSize(100,30), 0);
+    wxPoint(180, 70), wxSize(100, 30), 0);
 
   // List Control for Modules
-  ModuleListCtrl = new wxListCtrl(panel, wxID_ANY, wxPoint(40, 100),
+  ModuleListCtrl = new wxListCtrl(panel, wxID_ANY, wxPoint(40, 120),
     wxSize(420, 400), wxLC_REPORT | wxLC_HRULES | wxLC_SINGLE_SEL);
   ModuleListCtrl->InsertColumn(0, "Module Name", wxLIST_FORMAT_LEFT, 120);
   ModuleListCtrl->InsertColumn(1, "Type", wxLIST_FORMAT_LEFT, 200);
@@ -316,17 +340,9 @@ InstallerFrame::InstallerFrame(const wxString& title, const wxPoint& pos,
 
   // Text Control for Description
   ModDescriptionTextCtrl = new wxTextCtrl(panel, wxID_ANY, "Module Description",
-    wxPoint(480, 100), wxSize(300, 200), wxTE_READONLY | wxTE_MULTILINE);
+    wxPoint(480, 120), wxSize(300, 200), wxTE_READONLY | wxTE_MULTILINE);
 
   if(!SwordApp.HasInstallerConfig()) SwordApp.InitInstallerConfig();
-  SwordApp.SelectRemoteSource();
-  std::vector<SwordModuleInfo> mod_list = SwordApp.GetRemoteSourceModules();
-  for(int n = 0; n < mod_list.size(); n++)
-  {
-    ModuleListCtrl->InsertItem(n, mod_list[n].Name);
-    ModuleListCtrl->SetItem(n, 1, mod_list[n].Type);
-    ModuleListCtrl->SetItem(n, 2, mod_list[n].Version);
-  }
 
   // Status Bar at Bottom
   CreateStatusBar();
@@ -337,6 +353,18 @@ InstallerFrame::InstallerFrame(const wxString& title, const wxPoint& pos,
 void InstallerFrame::OnExit(wxCommandEvent& event)
 {
   Close(true);
+}
+
+void InstallerFrame::LoadSource(wxCommandEvent& event)
+{
+  SwordApp.SelectRemoteSource();
+  std::vector<SwordModuleInfo> mod_list = SwordApp.GetRemoteSourceModules();
+  for(int n = 0; n < mod_list.size(); n++)
+  {
+    ModuleListCtrl->InsertItem(n, mod_list[n].Name);
+    ModuleListCtrl->SetItem(n, 1, mod_list[n].Type);
+    ModuleListCtrl->SetItem(n, 2, mod_list[n].Version);
+  }
 }
 
 void InstallerFrame::InstallModule(wxCommandEvent& event)
