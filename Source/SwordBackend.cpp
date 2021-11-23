@@ -145,6 +145,7 @@ void SwordBackend::InitializeAppModules()
 {
   biblical_texts.clear();
   commentaries.clear();
+  dictionaries.clear();
 
   sword::ModMap::iterator modIterator;
   for(modIterator = library_mgr.Modules.begin();
@@ -254,6 +255,11 @@ std::string SwordBackend::GetVerseRef(std::string mod_name)
 {
   sword::SWKey * my_key = (library_mgr.getModule(mod_name.c_str()))->getKey();
   return std::string(my_key->getText());
+}
+
+void SwordBackend::SetVerseRef(std::string mod_name, std::string key)
+{
+  library_mgr.getModule(mod_name.c_str())->setKey(key.c_str());
 }
 
 std::string SwordBackend::IncrementVerse(std::string mod_name, int n)

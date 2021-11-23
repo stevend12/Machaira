@@ -224,17 +224,21 @@ void MainFrame::ChooseTranslation(wxCommandEvent& event)
 
 void MainFrame::ChooseCommentary(wxCommandEvent& event)
 {
-  UpdateWindows(SwordApp.GetVerseRef(std::string(ScriptureComboBox->GetValue())));
+  UpdateWindows(std::string(CurrentVerseText->GetLabel()));
 }
 
 void MainFrame::GoToPreviousVerse(wxCommandEvent& event)
 {
+  SwordApp.SetVerseRef(std::string(ScriptureComboBox->GetValue()),
+    std::string(CurrentVerseText->GetLabel()));
   SwordApp.IncrementVerse(std::string(ScriptureComboBox->GetValue()), -1);
   UpdateWindows(SwordApp.GetVerseRef(std::string(ScriptureComboBox->GetValue())));
 }
 
 void MainFrame::GoToNextVerse(wxCommandEvent& event)
 {
+  SwordApp.SetVerseRef(std::string(ScriptureComboBox->GetValue()),
+    std::string(CurrentVerseText->GetLabel()));
   SwordApp.IncrementVerse(std::string(ScriptureComboBox->GetValue()), 1);
   UpdateWindows(SwordApp.GetVerseRef(std::string(ScriptureComboBox->GetValue())));
 }

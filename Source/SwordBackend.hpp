@@ -62,6 +62,7 @@ class SwordBackend
     // Utilities
     std::string GetSwordVersion();
     std::string GetVerseRef(std::string mod_name);
+    void SetVerseRef(std::string mod_name, std::string key);
     std::string IncrementVerse(std::string mod_name, int n);
   private:
     // Directories
