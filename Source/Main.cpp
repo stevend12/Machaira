@@ -308,7 +308,7 @@ InstallerFrame::InstallerFrame(const wxString& title, const wxPoint& pos,
   // Main Panel
   wxPanel * panel = new wxPanel(this, wxID_ANY);
 
-  // Combo Box to Choose Scripture Translation
+  // Combo Box to Choose Remote Source
   std::vector<std::string> sources = SwordApp.GetRemoteSources();
   wxArrayString s_choices;
   wxString s_value("");
@@ -357,7 +357,7 @@ void InstallerFrame::OnExit(wxCommandEvent& event)
 
 void InstallerFrame::LoadSource(wxCommandEvent& event)
 {
-  SwordApp.SelectRemoteSource();
+  SwordApp.SelectRemoteSource(std::string(SourceComboBox->GetValue()));
   std::vector<SwordModuleInfo> mod_list = SwordApp.GetRemoteSourceModules();
   for(int n = 0; n < mod_list.size(); n++)
   {
