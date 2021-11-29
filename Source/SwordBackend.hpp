@@ -44,7 +44,7 @@ class SwordBackend
     SwordBackend(SwordBackendSettings settings);
     // Install Manager
     bool HasInstallerConfig();
-    void InitInstallerConfig();
+    void InitInstallerConfig(std::string source_file = "");
     void InitializeInstaller();
     std::vector<std::string> GetRemoteSources(){ return remote_sources; }
     void SelectRemoteSource(std::string src_name = "");

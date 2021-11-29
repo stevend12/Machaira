@@ -51,23 +51,47 @@ bool SwordBackend::HasInstallerConfig()
   return std::filesystem::exists(config_path.c_str());
 }
 
-void SwordBackend::InitInstallerConfig()
+void SwordBackend::InitInstallerConfig(std::string source_file)
 {
+  // Set file path & delete installer config file if it exists
   sword::SWBuf confPath = install_manager_dir.c_str();
   confPath += "/InstallMgr.conf";
   sword::FileMgr::createParent(confPath.c_str());
   remove(confPath.c_str());
-
+  // Set basic settings for config
   sword::SWConfig config(confPath.c_str());
   config["General"]["PassiveFTP"] = "true";
   config["General"]["TimeoutMillis"] = "10000";
   config["General"]["UnverifiedPeerAllowed"] = "true";
-
-  sword::InstallSource is("FTP");
-  is.caption = "CrossWire";
-  is.source = "ftp.crosswire.org";
-  is.directory = "/pub/sword/raw";
-  config["Sources"]["FTPSource"] = is.getConfEnt();
+  // Attempt to load sources from text file
+  if(source_file != "" && std::filesystem::exists(source_file.c_str()))
+  {
+    size_t p1, p2;
+    std::string line;
+    std::ifstream fin(source_file.c_str());
+    while(std::getline(fin, line))
+    {
+      p2 = line.find(',');
+      sword::InstallSource is(line.substr(0, p2).c_str());
+      p1 = p2+1; p2 = line.find(',', p1);
+      is.caption = line.substr(p1, p2-p1).c_str();
+      p1 = p2+1; p2 = line.find(',', p1);
+      is.source = line.substr(p1, p2-p1).c_str();
+      p1 = p2+1; p2 = line.find(',', p1);
+      is.directory = line.substr(p1, p2-p1).c_str();
+      config["Sources"]["HTTPSSource"] = is.getConfEnt();
+    }
+    fin.close();
+  }
+  // Otherwise initialize with one source (CrossWire)
+  else
+  {
+    sword::InstallSource is("HTTPS");
+    is.caption = "CrossWire";
+    is.source = "crosswire.org";
+    is.directory = "/ftpmirror/pub/sword/packages/rawzip";
+    config["Sources"]["HTTPSSource"] = is.getConfEnt();
+  }
 
   config.save();
 }
