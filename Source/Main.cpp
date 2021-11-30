@@ -201,7 +201,7 @@ MainFrame::MainFrame(const wxString& title, const wxPoint& pos, const wxSize& si
   SetStatusText(initial_status);
 
   // Initialize app by showing Genesis 1:1
-  UpdateWindows(boot_verse);
+  //UpdateWindows(boot_verse);
 }
 
 void MainFrame::OnExit(wxCommandEvent& event)
@@ -341,8 +341,6 @@ InstallerFrame::InstallerFrame(const wxString& title, const wxPoint& pos,
   // Text Control for Description
   ModDescriptionTextCtrl = new wxTextCtrl(panel, wxID_ANY, "Module Description",
     wxPoint(480, 120), wxSize(300, 200), wxTE_READONLY | wxTE_MULTILINE);
-
-  if(!SwordApp.HasInstallerConfig()) SwordApp.InitInstallerConfig();
 
   // Status Bar at Bottom
   CreateStatusBar();

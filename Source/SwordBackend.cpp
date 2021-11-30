@@ -9,6 +9,7 @@
 #include "SwordBackend.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <filesystem>
 
@@ -18,14 +19,13 @@
 #include <swoptfilter.h>
 
 SwordBackend::SwordBackend() :
-  library_mgr("./.sword", true, new sword::MarkupFilterMgr(sword::FMT_XHTML)),
-  install_mgr("./.sword/InstallMgr")
+  library_mgr("./Res/.sword", true, new sword::MarkupFilterMgr(sword::FMT_XHTML)),
+  install_mgr("./Res/.sword/InstallMgr")
 {
-  library_dir = "./.sword";
-  install_manager_dir = "./.sword/InstallMgr";
+  library_dir = "./Res/.sword";
+  install_manager_dir = "./Res/.sword/InstallMgr";
   default_source = "CrossWire";
-  install_mgr.setUserDisclaimerConfirmed(true);
-  if(!library_mgr.config) std::cout << "SWORD configuration not found.\n";
+
   InitializeInstaller();
   InitializeLibrary();
 }
@@ -38,8 +38,7 @@ SwordBackend::SwordBackend(SwordBackendSettings settings) :
   library_dir = settings.LibraryDir;
   install_manager_dir = settings.InstallDir;
   default_source = settings.DefaultSource;
-  install_mgr.setUserDisclaimerConfirmed(true);
-  if(!library_mgr.config) std::cout << "SWORD configuration not found.\n";
+
   InitializeInstaller();
   InitializeLibrary();
 }
@@ -83,7 +82,7 @@ void SwordBackend::InitInstallerConfig(std::string source_file)
     }
     fin.close();
   }
-  // Otherwise initialize with one source (CrossWire)
+  // Otherwise initialize with one source (CrossWire HTTPS)
   else
   {
     sword::InstallSource is("HTTPS");
@@ -98,6 +97,13 @@ void SwordBackend::InitInstallerConfig(std::string source_file)
 
 void SwordBackend::InitializeInstaller()
 {
+  if(!HasInstallerConfig())
+  {
+    InitInstallerConfig();
+    //InitInstallerConfig(install_manager_dir + std::string("/SourceList.txt"));
+    install_mgr.readInstallConf();
+  }
+  install_mgr.setUserDisclaimerConfirmed(true);
   remote_sources.clear();
   for(const auto & [key, value] : install_mgr.sources)
   {
@@ -178,6 +184,8 @@ void SwordBackend::InstallRemoteModule(std::string mod_name)
 
 void SwordBackend::InitializeLibrary()
 {
+  if(!library_mgr.config) std::cout << "Warning: SWORD configuration not found.\n";
+
   biblical_texts.clear();
   commentaries.clear();
   dictionaries.clear();
