@@ -70,6 +70,7 @@ void SwordBackend::InitInstallerConfig(std::string source_file)
     std::ifstream fin(source_file.c_str());
     while(std::getline(fin, line))
     {
+      if(line[0] == '#') continue;
       p2 = line.find(',');
       sword::InstallSource is(line.substr(0, p2).c_str());
       p1 = p2+1; p2 = line.find(',', p1);
@@ -88,7 +89,7 @@ void SwordBackend::InitInstallerConfig(std::string source_file)
     sword::InstallSource is("HTTPS");
     is.caption = "CrossWire";
     is.source = "crosswire.org";
-    is.directory = "/ftpmirror/pub/sword/packages/rawzip";
+    is.directory = "/ftpmirror/pub/sword/raw";
     config["Sources"]["HTTPSSource"] = is.getConfEnt();
   }
 
@@ -99,8 +100,8 @@ void SwordBackend::InitializeInstaller()
 {
   if(!HasInstallerConfig())
   {
-    InitInstallerConfig();
-    //InitInstallerConfig(install_manager_dir + std::string("/SourceList.txt"));
+    //InitInstallerConfig();
+    InitInstallerConfig(install_manager_dir + std::string("/SourceList.txt"));
     install_mgr.readInstallConf();
   }
   install_mgr.setUserDisclaimerConfirmed(true);
