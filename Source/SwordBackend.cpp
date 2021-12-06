@@ -50,7 +50,7 @@ bool SwordBackend::HasInstallerConfig()
   return std::filesystem::exists(config_path.c_str());
 }
 
-void SwordBackend::InitInstallerConfig(std::string source_file)
+void SwordBackend::InitInstallerConfig()
 {
   // Set file path & delete installer config file if it exists
   sword::SWBuf confPath = install_manager_dir.c_str();
@@ -62,47 +62,55 @@ void SwordBackend::InitInstallerConfig(std::string source_file)
   config["General"]["PassiveFTP"] = "true";
   config["General"]["TimeoutMillis"] = "10000";
   config["General"]["UnverifiedPeerAllowed"] = "true";
+  // Initialize with one source (CrossWire HTTPS)
+  sword::InstallSource is("HTTPS");
+  is.caption = "CrossWire";
+  is.source = "crosswire.org";
+  is.directory = "/ftpmirror/pub/sword/raw";
+  config["Sources"]["HTTPSSource"] = is.getConfEnt();
+  // Save to file and read
+  config.save();
+  install_mgr.readInstallConf();
+}
+
+void SwordBackend::AddRemoteSourcesCSV(std::string csv_file_name)
+{
   // Attempt to load sources from text file
-  if(source_file != "" && std::filesystem::exists(source_file.c_str()))
+  if(std::filesystem::exists(csv_file_name.c_str()))
   {
     size_t p1, p2;
     std::string line;
-    std::ifstream fin(source_file.c_str());
+    std::ifstream fin(csv_file_name.c_str());
     while(std::getline(fin, line))
     {
       if(line[0] == '#') continue;
+
       p2 = line.find(',');
-      sword::InstallSource is(line.substr(0, p2).c_str());
+      std::string type = line.substr(0, p2);
       p1 = p2+1; p2 = line.find(',', p1);
-      is.caption = line.substr(p1, p2-p1).c_str();
+      std::string confEnt = line.substr(p1, p2-p1); confEnt += '|';
       p1 = p2+1; p2 = line.find(',', p1);
-      is.source = line.substr(p1, p2-p1).c_str();
+      confEnt += (line.substr(p1, p2-p1) + '|');
       p1 = p2+1; p2 = line.find(',', p1);
-      is.directory = line.substr(p1, p2-p1).c_str();
-      config["Sources"]["HTTPSSource"] = is.getConfEnt();
+      confEnt += line.substr(p1, p2-p1) + "|||";
+      std::cout << confEnt << '\n';
+
+      sword::InstallSource is(type.c_str(), confEnt.c_str());
+      install_mgr.sources["AndBible"] = &is;
     }
     fin.close();
+    // Save and re-read soucre list from config file
+    install_mgr.saveInstallConf();
+    install_mgr.readInstallConf();
   }
-  // Otherwise initialize with one source (CrossWire HTTPS)
-  else
-  {
-    sword::InstallSource is("HTTPS");
-    is.caption = "CrossWire";
-    is.source = "crosswire.org";
-    is.directory = "/ftpmirror/pub/sword/raw";
-    config["Sources"]["HTTPSSource"] = is.getConfEnt();
-  }
-
-  config.save();
 }
 
 void SwordBackend::InitializeInstaller()
 {
   if(!HasInstallerConfig())
   {
-    //InitInstallerConfig();
-    InitInstallerConfig(install_manager_dir + std::string("/SourceList.txt"));
-    install_mgr.readInstallConf();
+    InitInstallerConfig();
+    AddRemoteSourcesCSV(install_manager_dir + std::string("/SourceList.txt"));
   }
   install_mgr.setUserDisclaimerConfirmed(true);
   remote_sources.clear();

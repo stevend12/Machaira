@@ -1,8 +1,4 @@
-HTTPS,CrossWire,crosswire.org,/ftpmirror/pub/sword/raw/mods.d,/ftpmirror/pub/sword/packages/rawzip,,,
-#HTTPS,Crosswire Beta,crosswire.org,/ftpmirror/pub/sword/betapackages/rawzip,/ftpmirror/pub/sword/betaraw,,,
-#HTTPS,AndBible Extra,andbible.github.io,/andbible-extra/zip,/andbible-extra,,,
-HTTPS,AndBible,andbible.github.io,/data/andbible,/data/andbible/zip,,,
-#HTTPS,AndBible Beta,andbible.github.io,/data/andbible/beta/zip,/data/andbible/beta,,,
+#HTTPSSource=AndBible Extra|andbible.github.io|/andbible-extra|||andbible-extra
 #HTTPS,IBT,ibtrussia.org,/ftpmirror/pub/modsword/rawzip,/ftpmirror/pub/modsword/raw,,,
 #HTTPS,Wycliffe (CrossWire),crosswire.org,/ftpmirror/pub/sword/wycliffepackages/rawzip,/ftpmirror/pub/sword/wyclifferaw,,,
 #HTTPS,eBible,ebible.org,/sword/zip,/sword,,,
