@@ -355,6 +355,7 @@ void InstallerFrame::OnExit(wxCommandEvent& event)
 
 void InstallerFrame::LoadSource(wxCommandEvent& event)
 {
+  ModuleListCtrl->DeleteAllItems();
   SwordApp.SelectRemoteSource(std::string(SourceComboBox->GetValue()));
   std::vector<SwordModuleInfo> mod_list = SwordApp.GetRemoteSourceModules();
   for(int n = 0; n < mod_list.size(); n++)
