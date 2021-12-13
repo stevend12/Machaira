@@ -217,7 +217,7 @@ void MainFrame::LoadText(wxCommandEvent& event)
 void MainFrame::AddModule(wxCommandEvent& event)
 {
   InstallerFrame * installer_frame = new InstallerFrame("Module Installer",
-    wxPoint(200, 200), wxSize(800, 600));
+    wxPoint(200, 200), wxSize(840, 600));
   installer_frame->Show(true);
 	wxGetApp().SetTopWindow(installer_frame);
 }
@@ -333,14 +333,15 @@ InstallerFrame::InstallerFrame(const wxString& title, const wxPoint& pos,
 
   // List Control for Modules
   ModuleListCtrl = new wxListCtrl(panel, wxID_ANY, wxPoint(40, 120),
-    wxSize(420, 400), wxLC_REPORT | wxLC_HRULES | wxLC_SINGLE_SEL);
-  ModuleListCtrl->InsertColumn(0, "Module Name", wxLIST_FORMAT_LEFT, 120);
+    wxSize(480, 400), wxLC_REPORT | wxLC_HRULES | wxLC_SINGLE_SEL);
+  ModuleListCtrl->InsertColumn(0, "Name", wxLIST_FORMAT_LEFT, 120);
   ModuleListCtrl->InsertColumn(1, "Type", wxLIST_FORMAT_LEFT, 200);
-  ModuleListCtrl->InsertColumn(2, "Version", wxLIST_FORMAT_LEFT, 90);
+  ModuleListCtrl->InsertColumn(2, "Lang", wxLIST_FORMAT_LEFT, 50);
+  ModuleListCtrl->InsertColumn(3, "Version", wxLIST_FORMAT_LEFT, 90);
 
   // Text Control for Description
   ModDescriptionTextCtrl = new wxTextCtrl(panel, wxID_ANY, "Module Description",
-    wxPoint(480, 120), wxSize(300, 200), wxTE_READONLY | wxTE_MULTILINE);
+    wxPoint(530, 120), wxSize(250, 200), wxTE_READONLY | wxTE_MULTILINE);
 
   // Status Bar at Bottom
   CreateStatusBar();
@@ -362,7 +363,8 @@ void InstallerFrame::LoadSource(wxCommandEvent& event)
   {
     ModuleListCtrl->InsertItem(n, mod_list[n].Name);
     ModuleListCtrl->SetItem(n, 1, mod_list[n].Type);
-    ModuleListCtrl->SetItem(n, 2, mod_list[n].Version);
+    ModuleListCtrl->SetItem(n, 2, mod_list[n].Language);
+    ModuleListCtrl->SetItem(n, 3, mod_list[n].Version);
   }
 }
 

@@ -32,6 +32,7 @@ struct SwordModuleInfo
 {
   std::string Name;
   std::string Type;
+  std::string Language;
   std::string Description;
   std::string Version;
 };

@@ -147,10 +147,12 @@ void SwordBackend::SelectRemoteSource(std::string src_name)
   {
     SwordModuleInfo temp_module;
   	sword::SWModule * module = (*list_it).second;
-    temp_module.Name = module->Name();
-    temp_module.Type = module->Type();
+    temp_module.Name = module->getName();
+    temp_module.Type = module->getType();
+    temp_module.Language = module->getLanguage();
     temp_module.Description = module->getDescription();
-    temp_module.Version = module->getConfigEntry("Version");
+    if(module->getConfigEntry("Version") == 0) temp_module.Version = "NA";
+    else temp_module.Version = module->getConfigEntry("Version");
     remote_module_info_list.push_back(temp_module);
   }
 }
