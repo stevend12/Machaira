@@ -9,6 +9,7 @@
 #include "SwordBackend.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <sstream>
 #include <filesystem>
 
@@ -18,15 +19,15 @@
 #include <swoptfilter.h>
 
 SwordBackend::SwordBackend() :
-  library_mgr("./.sword", true, new sword::MarkupFilterMgr(sword::FMT_XHTML)),
-  install_mgr("./.sword/InstallMgr")
+  library_mgr("./Res/.sword", true, new sword::MarkupFilterMgr(sword::FMT_XHTML)),
+  install_mgr("./Res/.sword/InstallMgr")
 {
-  library_dir = "./.sword";
-  install_manager_dir = "./.sword/InstallMgr";
+  library_dir = "./Res/.sword";
+  install_manager_dir = "./Res/.sword/InstallMgr";
   default_source = "CrossWire";
-  install_mgr.setUserDisclaimerConfirmed(true);
-  if(!library_mgr.config) std::cout << "SWORD configuration not found.\n";
-  InitializeAppModules();
+
+  InitializeInstaller();
+  InitializeLibrary();
 }
 
 SwordBackend::SwordBackend(SwordBackendSettings settings) :
@@ -37,9 +38,9 @@ SwordBackend::SwordBackend(SwordBackendSettings settings) :
   library_dir = settings.LibraryDir;
   install_manager_dir = settings.InstallDir;
   default_source = settings.DefaultSource;
-  install_mgr.setUserDisclaimerConfirmed(true);
-  if(!library_mgr.config) std::cout << "SWORD configuration not found.\n";
-  InitializeAppModules();
+
+  InitializeInstaller();
+  InitializeLibrary();
 }
 
 bool SwordBackend::HasInstallerConfig()
@@ -51,23 +52,72 @@ bool SwordBackend::HasInstallerConfig()
 
 void SwordBackend::InitInstallerConfig()
 {
+  // Set file path & delete installer config file if it exists
   sword::SWBuf confPath = install_manager_dir.c_str();
   confPath += "/InstallMgr.conf";
   sword::FileMgr::createParent(confPath.c_str());
   remove(confPath.c_str());
-
+  // Set basic settings for config
   sword::SWConfig config(confPath.c_str());
   config["General"]["PassiveFTP"] = "true";
   config["General"]["TimeoutMillis"] = "10000";
   config["General"]["UnverifiedPeerAllowed"] = "true";
-
-  sword::InstallSource is("FTP");
+  // Initialize with one source (CrossWire HTTPS)
+  sword::InstallSource is("HTTPS");
   is.caption = "CrossWire";
-  is.source = "ftp.crosswire.org";
-  is.directory = "/pub/sword/raw";
-  config["Sources"]["FTPSource"] = is.getConfEnt();
-
+  is.source = "crosswire.org";
+  is.directory = "/ftpmirror/pub/sword/raw";
+  config["Sources"]["HTTPSSource"] = is.getConfEnt();
+  // Save to file and read
   config.save();
+  install_mgr.readInstallConf();
+}
+
+void SwordBackend::AddRemoteSourcesCSV(std::string csv_file_name)
+{
+  // Attempt to load sources from text file
+  if(std::filesystem::exists(csv_file_name.c_str()))
+  {
+    size_t p1, p2;
+    std::string line;
+    std::ifstream fin(csv_file_name.c_str());
+    while(std::getline(fin, line))
+    {
+      if(line[0] == '#') continue;
+
+      p2 = line.find(',');
+      std::string type = line.substr(0, p2);
+      p1 = p2+1; p2 = line.find(',', p1);
+      std::string confEnt = line.substr(p1, p2-p1); confEnt += '|';
+      p1 = p2+1; p2 = line.find(',', p1);
+      confEnt += (line.substr(p1, p2-p1) + '|');
+      p1 = p2+1; p2 = line.find(',', p1);
+      confEnt += line.substr(p1, p2-p1) + "|||";
+      std::cout << confEnt << '\n';
+
+      sword::InstallSource is(type.c_str(), confEnt.c_str());
+      install_mgr.sources["AndBible"] = &is;
+    }
+    fin.close();
+    // Save and re-read soucre list from config file
+    install_mgr.saveInstallConf();
+    install_mgr.readInstallConf();
+  }
+}
+
+void SwordBackend::InitializeInstaller()
+{
+  if(!HasInstallerConfig())
+  {
+    InitInstallerConfig();
+    AddRemoteSourcesCSV(install_manager_dir + std::string("/SourceList.txt"));
+  }
+  install_mgr.setUserDisclaimerConfirmed(true);
+  remote_sources.clear();
+  for(const auto & [key, value] : install_mgr.sources)
+  {
+    remote_sources.push_back(std::string(key));
+  }
 }
 
 void SwordBackend::SelectRemoteSource(std::string src_name)
@@ -97,10 +147,12 @@ void SwordBackend::SelectRemoteSource(std::string src_name)
   {
     SwordModuleInfo temp_module;
   	sword::SWModule * module = (*list_it).second;
-    temp_module.Name = module->Name();
-    temp_module.Type = module->Type();
+    temp_module.Name = module->getName();
+    temp_module.Type = module->getType();
+    temp_module.Language = module->getLanguage();
     temp_module.Description = module->getDescription();
-    temp_module.Version = module->getConfigEntry("Version");
+    if(module->getConfigEntry("Version") == 0) temp_module.Version = "NA";
+    else temp_module.Version = module->getConfigEntry("Version");
     remote_module_info_list.push_back(temp_module);
   }
 }
@@ -141,10 +193,13 @@ void SwordBackend::InstallRemoteModule(std::string mod_name)
   }
 }
 
-void SwordBackend::InitializeAppModules()
+void SwordBackend::InitializeLibrary()
 {
+  if(!library_mgr.config) std::cout << "Warning: SWORD configuration not found.\n";
+
   biblical_texts.clear();
   commentaries.clear();
+  dictionaries.clear();
 
   sword::ModMap::iterator modIterator;
   for(modIterator = library_mgr.Modules.begin();
@@ -254,6 +309,11 @@ std::string SwordBackend::GetVerseRef(std::string mod_name)
 {
   sword::SWKey * my_key = (library_mgr.getModule(mod_name.c_str()))->getKey();
   return std::string(my_key->getText());
+}
+
+void SwordBackend::SetVerseRef(std::string mod_name, std::string key)
+{
+  library_mgr.getModule(mod_name.c_str())->setKey(key.c_str());
 }
 
 std::string SwordBackend::IncrementVerse(std::string mod_name, int n)

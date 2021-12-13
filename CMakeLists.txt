@@ -19,13 +19,15 @@ if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
 endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}")
 
+# Copy relevant resources to build directory
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/Res DESTINATION ${CMAKE_BINARY_DIR})
+
 # Add sources and headers
 set(SOURCE
   ${SOURCE}
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/Main.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/SwordBackend.cpp
 )
-
 set(HEADERS
   ${HEADERS}
   ${CMAKE_CURRENT_SOURCE_DIR}/Source/SwordBackend.hpp

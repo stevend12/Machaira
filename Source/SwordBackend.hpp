@@ -32,6 +32,7 @@ struct SwordModuleInfo
 {
   std::string Name;
   std::string Type;
+  std::string Language;
   std::string Description;
   std::string Version;
 };
@@ -45,11 +46,14 @@ class SwordBackend
     // Install Manager
     bool HasInstallerConfig();
     void InitInstallerConfig();
+    void AddRemoteSourcesCSV(std::string csv_file_name);
+    void InitializeInstaller();
+    std::vector<std::string> GetRemoteSources(){ return remote_sources; }
     void SelectRemoteSource(std::string src_name = "");
     std::vector<SwordModuleInfo> GetRemoteSourceModules();
     void InstallRemoteModule(std::string mod_name);
     // Library Manager
-    void InitializeAppModules();
+    void InitializeLibrary();
     std::string GetBiblicalText(int n){ return biblical_texts[n]; }
     std::vector<std::string> GetBiblicalTexts(){ return biblical_texts; }
     std::string GetCommentary(int n){ return commentaries[n]; }
@@ -62,6 +66,7 @@ class SwordBackend
     // Utilities
     std::string GetSwordVersion();
     std::string GetVerseRef(std::string mod_name);
+    void SetVerseRef(std::string mod_name, std::string key);
     std::string IncrementVerse(std::string mod_name, int n);
   private:
     // Directories
@@ -77,6 +82,7 @@ class SwordBackend
     std::vector<std::string> dictionaries;
     // Module Installer
     sword::InstallMgr install_mgr;
+    std::vector<std::string> remote_sources;
     std::vector<SwordModuleInfo> remote_module_info_list;
 };
 
