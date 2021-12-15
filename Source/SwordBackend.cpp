@@ -300,6 +300,20 @@ std::string SwordBackend::GetText(std::string key, std::string mod_name)
   return input;
 }
 
+bool SwordBackend::UpdatePersonalCommentary(std::string key, std::string text)
+{
+  sword::SWKey my_key(key.c_str());
+  sword::SWModule * module = library_mgr.getModule("Personal");
+  if(!module)
+  {
+    error_text = "Personal commentary not found!";
+    return false;
+  }
+  module->setKey(my_key);
+  module->setEntry(text.c_str());
+  return true;
+}
+
 std::string SwordBackend::GetSwordVersion()
 {
   sword::SWVersion retval;

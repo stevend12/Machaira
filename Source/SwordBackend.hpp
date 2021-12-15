@@ -59,6 +59,7 @@ class SwordBackend
     std::string GetCommentary(int n){ return commentaries[n]; }
     std::vector<std::string> GetCommentaries(){ return commentaries; }
     std::string GetText(std::string key, std::string mod_name);
+    bool UpdatePersonalCommentary(std::string key, std::string text);
     // Get/Set
     std::string GetInstallDir(){ return install_manager_dir; }
     std::string GetLibraryDir(){ return library_dir; }
