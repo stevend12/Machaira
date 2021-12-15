@@ -51,7 +51,7 @@ class SwordBackend
     std::vector<std::string> GetRemoteSources(){ return remote_sources; }
     void SelectRemoteSource(std::string src_name = "");
     std::vector<SwordModuleInfo> GetRemoteSourceModules();
-    void InstallRemoteModule(std::string mod_name);
+    bool InstallRemoteModule(std::string mod_name);
     // Library Manager
     void InitializeLibrary();
     std::string GetBiblicalText(int n){ return biblical_texts[n]; }
@@ -64,6 +64,7 @@ class SwordBackend
     std::string GetLibraryDir(){ return library_dir; }
     std::string GetDefaultSource(){ return default_source; }
     // Utilities
+    std::string GetErrorText(){ return error_text; }
     std::string GetSwordVersion();
     std::string GetVerseRef(std::string mod_name);
     void SetVerseRef(std::string mod_name, std::string key);
@@ -75,6 +76,7 @@ class SwordBackend
     // Variables
     std::string default_source;
     std::string selected_source;
+    std::string error_text;
     // Local Module Library
     sword::SWMgr library_mgr;
     std::vector<std::string> biblical_texts;

@@ -374,7 +374,15 @@ void InstallerFrame::InstallModule(wxCommandEvent& event)
   item_index = ModuleListCtrl->GetNextItem(item_index, wxLIST_NEXT_ALL,
     wxLIST_STATE_SELECTED);
   std::vector<SwordModuleInfo> mod_list = SwordApp.GetRemoteSourceModules();
-  SwordApp.InstallRemoteModule(mod_list[item_index].Name);
+  if(!SwordApp.InstallRemoteModule(mod_list[item_index].Name))
+  {
+    SetStatusText(SwordApp.GetErrorText());
+  }
+  else
+  {
+    SetStatusText(std::string("Module installed: ") +
+      mod_list[item_index].Name);
+  }
 }
 
 void InstallerFrame::DisplayModuleInfo(wxListEvent& event)

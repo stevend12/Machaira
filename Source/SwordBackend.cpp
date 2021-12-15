@@ -162,35 +162,39 @@ std::vector<SwordModuleInfo> SwordBackend::GetRemoteSourceModules()
   return remote_module_info_list;
 }
 
-void SwordBackend::InstallRemoteModule(std::string mod_name)
+bool SwordBackend::InstallRemoteModule(std::string mod_name)
 {
   sword::InstallSourceMap::iterator source =
     install_mgr.sources.find(selected_source.c_str());
   if(source == install_mgr.sources.end())
   {
-    std::cout << "Error: Couldn't find selected remote source " <<
-      selected_source << '\n';
+    error_text = std::string("Error: Couldn't find selected remote source ") +
+      selected_source;
+    return false;
   }
-  else std::cout << "Found source " << selected_source << '\n';
 
   sword::InstallSource * is = source->second;
   sword::SWModule * module = is->getMgr()->getModule(mod_name.c_str());
-  if (!module) {
-    std::cout << "Remote source " << selected_source <<
-      " does not make available module [" << mod_name << "]\n";
+  if(!module)
+  {
+    error_text = std::string("Remote source ") + selected_source +
+      std::string(" does not make available module [") + mod_name + "]";
+    return false;
   }
 
   int error = install_mgr.installModule(&library_mgr, 0, module->getName(), is);
   if(error)
   {
-    std::cout << "\nError installing module: [" << module->getName() <<
-      "] (write permissions?)\n";
+    error_text = std::string("Error installing module: [") + module->getName() +
+      "] (write permissions?)";
+    return false;
   }
   else
   {
-    std::cout << "\nInstalled module: [" << module->getName() << "]\n";
     library_mgr.augmentModules(library_dir.c_str());
   }
+
+  return true;
 }
 
 void SwordBackend::InitializeLibrary()
